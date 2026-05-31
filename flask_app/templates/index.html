@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Employee Management System</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    padding:20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+    color:#2563eb;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
+
+h2{
+    margin-bottom:15px;
+}
+
+.filters{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:10px;
+    margin-bottom:15px;
+}
+
+input,
+button{
+    padding:10px;
+    border-radius:5px;
+    border:1px solid #ccc;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.loader{
+    display:none;
+    margin:15px auto;
+    border:6px solid #ddd;
+    border-top:6px solid #2563eb;
+    border-radius:50%;
+    width:40px;
+    height:40px;
+    animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+    100%{
+        transform:rotate(360deg);
+    }
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+table th,
+table td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:left;
+}
+
+table th{
+    background:#2563eb;
+    color:white;
+}
+
+.action-buttons{
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+pre{
+    background:#f4f4f4;
+    padding:10px;
+    border-radius:5px;
+    overflow:auto;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Employee Management System</h1>
+
+<!-- Upload Section -->
+
+<div class="card">
+
+<h2>Upload Employee Data File</h2>
+
+<input type="file" id="employeeFile">
+
+<button onclick="uploadFile()">
+Upload File
+</button>
+
+<div id="uploadLoader" class="loader"></div>
+
+<pre id="uploadResult"></pre>
+
+</div>
+
+<!-- Fetch Section -->
+
+<div class="card">
+
+<h2>Fetch Employees</h2>
+
+<div class="filters">
+
+<input type="number" id="id" placeholder="Employee ID">
+
+<input type="text" id="location" placeholder="Work Location">
+
+<input type="number" id="salary" placeholder="Salary">
+
+<input type="number" id="hike" placeholder="Expected Hike">
+
+<input type="number" step="0.1" id="rating" placeholder="Rating">
+
+<input type="text" id="role" placeholder="Role">
+
+</div>
+
+<div class="action-buttons">
+
+<button onclick="fetchEmployees()">
+Fetch Employees
+</button>
+
+<button onclick="goToAssign()">
+Go To Assign Section ↓
+</button>
+
+</div>
+
+<div id="fetchLoader" class="loader"></div>
+
+<div id="employeeTable"></div>
+
+</div>
+
+<!-- Assign Section -->
+
+<div class="card" id="assignSection">
+
+<h2>Project Assignment</h2>
+
+<p>
+Assign employees to projects based on performance rating and expected hike.
+</p>
+
+<br>
+
+<button onclick="assignEmployees()">
+Assign Project
+</button>
+
+<div id="assignLoader" class="loader"></div>
+
+<pre id="assignResult"></pre>
+
+</div>
+
+</div>
+
+<script>
+
+async function uploadFile(){
+
+    const file =
+        document.getElementById("employeeFile").files[0];
+
+    if(!file){
+        alert("Please select a file");
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    document.getElementById(
+        "uploadLoader"
+    ).style.display = "block";
+
+    try{
+
+        const response = await fetch(
+            "/upload-csv",
+            {
+                method:"POST",
+                body:formData
+            }
+        );
+
+        const result =
+            await response.json();
+
+        document.getElementById(
+            "uploadResult"
+        ).innerText =
+            JSON.stringify(result,null,2);
+
+    }
+    catch(error){
+
+        alert("Upload Failed");
+
+        console.error(error);
+    }
+
+    document.getElementById(
+        "uploadLoader"
+    ).style.display = "none";
+}
+
+async function fetchEmployees(){
+
+    document.getElementById(
+        "fetchLoader"
+    ).style.display = "block";
+
+    let params = new URLSearchParams();
+
+    const empId =
+        document.getElementById("id").value;
+
+    const location =
+        document.getElementById("location").value;
+
+    const salary =
+        document.getElementById("salary").value;
+
+    const hike =
+        document.getElementById("hike").value;
+
+    const rating =
+        document.getElementById("rating").value;
+
+    const role =
+        document.getElementById("role").value;
+
+    if(empId)
+        params.append("id", empId);
+
+    if(location)
+        params.append(
+            "work_location",
+            location
+        );
+
+    if(salary)
+        params.append(
+            "salary",
+            salary
+        );
+
+    if(hike)
+        params.append(
+            "expected_hike",
+            hike
+        );
+
+    if(rating)
+        params.append(
+            "performance_rating",
+            rating
+        );
+
+    if(role)
+        params.append(
+            "role",
+            role
+        );
+
+    try{
+
+        const response =
+            await fetch(
+                "/fetch?" +
+                params.toString()
+            );
+
+        const data =
+            await response.json();
+
+        createTable(data);
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert("Fetch Failed");
+    }
+
+    document.getElementById(
+        "fetchLoader"
+    ).style.display = "none";
+}
+
+function createTable(data){
+
+    if(data.length === 0){
+
+        document.getElementById(
+            "employeeTable"
+        ).innerHTML =
+            "<h3>No Employees Found</h3>";
+
+        return;
+    }
+
+    let html = `
+    <table>
+    <tr>
+    <th>ID</th>
+    <th>Location</th>
+    <th>Salary</th>
+    <th>Hike</th>
+    <th>Rating</th>
+    <th>Role</th>
+    </tr>
+    `;
+
+    data.forEach(emp => {
+
+        html += `
+        <tr>
+        <td>${emp.id}</td>
+        <td>${emp.work_location}</td>
+        <td>${emp.present_salary}</td>
+        <td>${emp.expected_hike}</td>
+        <td>${emp.performance_rating}</td>
+        <td>${emp.role}</td>
+        </tr>
+        `;
+    });
+
+    html += "</table>";
+
+    document.getElementById(
+        "employeeTable"
+    ).innerHTML = html;
+}
+
+function goToAssign(){
+
+    document
+    .getElementById("assignSection")
+    .scrollIntoView({
+        behavior:"smooth"
+    });
+}
+
+async function assignEmployees(){
+
+    document.getElementById(
+        "assignLoader"
+    ).style.display = "block";
+
+    try{
+
+        const response =
+            await fetch("/aggregate");
+
+        const result =
+            await response.json();
+
+        document.getElementById(
+            "assignResult"
+        ).innerText =
+            JSON.stringify(
+                result,
+                null,
+                2
+            );
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert("Assignment Failed");
+    }
+
+    document.getElementById(
+        "assignLoader"
+    ).style.display = "none";
+}
+
+</script>
+
+</body>
+</html>
