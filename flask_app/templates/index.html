@@ -1,237 +1,600 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management System</title>
 
-<title>Employee Management System</title>
+    <style>
 
-<style>
+        body{
+            font-family: Arial, sans-serif;
+            margin:20px;
+            background:#f4f6f9;
+        }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,sans-serif;
-}
+        h1{
+            text-align:center;
+            color:#333;
+        }
 
-body{
-    background:#f4f6f9;
-    padding:20px;
-}
+        .section{
+            background:white;
+            padding:20px;
+            margin-bottom:20px;
+            border-radius:10px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.2);
+        }
 
-.container{
-    max-width:1200px;
-    margin:auto;
-}
+        button{
+            padding:10px 15px;
+            margin:5px;
+            cursor:pointer;
+            border:none;
+            background:#007bff;
+            color:white;
+            border-radius:5px;
+        }
 
-h1{
-    text-align:center;
-    margin-bottom:20px;
-    color:#2563eb;
-}
+        button:hover{
+            background:#0056b3;
+        }
 
-.card{
-    background:white;
-    padding:20px;
-    margin-bottom:20px;
-    border-radius:10px;
-    box-shadow:0 2px 10px rgba(0,0,0,.1);
-}
+        input{
+            padding:8px;
+            margin:5px;
+        }
+        select{
+            padding:8px;
+            margin:5px;
+        }
+        
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:15px;
+        }
 
-h2{
-    margin-bottom:15px;
-}
+        table,th,td{
+            border:1px solid #ccc;
+        }
 
-.filters{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:10px;
-    margin-bottom:15px;
-}
+        th,td{
+            padding:10px;
+            text-align:center;
+        }
 
-input,
-button{
-    padding:10px;
-    border-radius:5px;
-    border:1px solid #ccc;
-}
+        th{
+            background:#007bff;
+            color:white;
+        }
 
-button{
-    background:#2563eb;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
+        .loader-container{
+            width:100%;
+            background:#ddd;
+            border-radius:10px;
+            overflow:hidden;
+            display:none;
+            margin-top:10px;
+        }
 
-button:hover{
-    background:#1d4ed8;
-}
+        .loader-bar{
+            width:0%;
+            height:20px;
+            background:green;
+            text-align:center;
+            color:white;
+            line-height:20px;
+        }
 
-.loader{
-    display:none;
-    margin:15px auto;
-    border:6px solid #ddd;
-    border-top:6px solid #2563eb;
-    border-radius:50%;
-    width:40px;
-    height:40px;
-    animation:spin 1s linear infinite;
-}
+        pre{
+            background:#eee;
+            padding:10px;
+            overflow:auto;
+        }
 
-@keyframes spin{
-    100%{
-        transform:rotate(360deg);
-    }
-}
+    </style>
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:15px;
-}
-
-table th,
-table td{
-    border:1px solid #ddd;
-    padding:10px;
-    text-align:left;
-}
-
-table th{
-    background:#2563eb;
-    color:white;
-}
-
-.action-buttons{
-    margin-top:15px;
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-}
-
-pre{
-    background:#f4f4f4;
-    padding:10px;
-    border-radius:5px;
-    overflow:auto;
-}
-
-</style>
 </head>
 
 <body>
 
-<div class="container">
-
 <h1>Employee Management System</h1>
 
-<!-- Upload Section -->
+<!-- ===================================== -->
+<!-- SYSTEM OPERATIONS -->
+<!-- ===================================== -->
 
-<div class="card">
+<div class="section">
 
-<h2>Upload Employee Data File</h2>
+    <h2>System Operations</h2>
 
-<input type="file" id="employeeFile">
+    <button onclick="callApi('/dbtest')">
+        Database Test
+    </button>
 
-<button onclick="uploadFile()">
-Upload File
-</button>
+    <button onclick="callApi('/hello')">
+        Hello Test
+    </button>
 
-<div id="uploadLoader" class="loader"></div>
+    <button onclick="callApi('/test')">
+        View All Employees
+    </button>
 
-<pre id="uploadResult"></pre>
+    <button onclick="callApi('/employee-count')">
+        Employee Count
+    </button>
 
-</div>
+    <button onclick="callApi('/salary-stats')">
+        Salary Statistics
+    </button>
 
-<!-- Fetch Section -->
+    <button onclick="callApi('/remove-duplicates')">
+        Remove Duplicates
+    </button>
 
-<div class="card">
+    <button onclick="clearDatabase()">
+        Clear Database
+    </button>
 
-<h2>Fetch Employees</h2>
-
-<div class="filters">
-
-<input type="number" id="id" placeholder="Employee ID">
-
-<input type="text" id="location" placeholder="Work Location">
-
-<input type="number" id="salary" placeholder="Salary">
-
-<input type="number" id="hike" placeholder="Expected Hike">
-
-<input type="number" step="0.1" id="rating" placeholder="Rating">
-
-<input type="text" id="role" placeholder="Role">
-
-</div>
-
-<div class="action-buttons">
-
-<button onclick="fetchEmployees()">
-Fetch Employees
-</button>
-
-<button onclick="goToAssign()">
-Go To Assign Section ↓
-</button>
+    <pre id="result"></pre>
 
 </div>
 
-<div id="fetchLoader" class="loader"></div>
 
-<div id="employeeTable"></div>
+<!-- ===================================== -->
+<!-- CSV UPLOAD -->
+<!-- ===================================== -->
+
+<div class="section">
+
+    <h2>Upload Employee CSV</h2>
+
+    <input
+        type="file"
+        id="fileInput"
+    >
+
+    <button onclick="uploadCSV()">
+        Upload CSV
+    </button>
+
+    <div
+        class="loader-container"
+        id="uploadLoader"
+    >
+
+        <div
+            class="loader-bar"
+            id="uploadBar"
+        >
+            0%
+        </div>
+
+    </div>
+
+    <pre id="uploadResult"></pre>
 
 </div>
 
-<!-- Assign Section -->
 
-<div class="card" id="assignSection">
+<!-- ===================================== -->
+<!-- FETCH EMPLOYEES -->
+<!-- ===================================== -->
 
-<h2>Project Assignment</h2>
+<div class="section">
 
-<p>
-Assign employees to projects based on performance rating and expected hike.
-</p>
+    <h2>Fetch Employees</h2>
 
-<br>
+    <input
+        type="number"
+        id="id"
+        placeholder="Employee ID"
+    >
 
-<button onclick="assignEmployees()">
-Assign Project
-</button>
 
-<div id="assignLoader" class="loader"></div>
 
-<pre id="assignResult"></pre>
+    <input
+        type="number"
+        id="salaryMin"
+        placeholder="Min Salary"
+    >
+
+    <input
+        type="number"
+        id="salaryMax"
+        placeholder="Max Salary"
+    >
+<select id="location">
+
+    <option value="">
+        Select Location
+    </option>
+
+    <option value="Chennai">
+        Chennai
+    </option>
+
+    <option value="Bangalore">
+        Bangalore
+    </option>
+
+    <option value="Hyderabad">
+        Hyderabad
+    </option>
+
+    <option value="Mumbai">
+        Mumbai
+    </option>
+
+    <option value="Pune">
+        Pune
+    </option>
+
+</select>
+
+
+<select id="hike">
+
+    <option value="">
+        Select Hike
+    </option>
+
+    <option value="5">5%</option>
+    <option value="10">10%</option>
+    <option value="15">15%</option>
+    <option value="20">20%</option>
+    <option value="25">25%</option>
+
+</select>
+
+
+<select id="rating">
+
+    <option value="">
+        Select Rating
+    </option>
+
+    <option value="3.0">3.0</option>
+    <option value="3.5">3.5</option>
+    <option value="4.0">4.0</option>
+    <option value="4.5">4.5</option>
+    <option value="5.0">5.0</option>
+
+</select>
+
+
+<select id="role">
+
+    <option value="">
+        Select Role
+    </option>
+
+    <option value="Developer">
+        Developer
+    </option>
+
+    <option value="QA">
+        QA
+    </option>
+
+    <option value="DevOps">
+        DevOps
+    </option>
+
+    <option value="Manager">
+        Manager
+    </option>
+
+    <option value="Designer">
+        Designer
+    </option>
+
+</select>
+    <br>
+
+    <button onclick="fetchEmployees()">
+        Fetch Employees
+    </button>
+
+    <button onclick="goToAssign()">
+        Go To Assign Section
+    </button>
+
+    <div
+        class="loader-container"
+        id="fetchLoader"
+    >
+        <div
+            class="loader-bar"
+            id="fetchBar"
+        >
+            Loading...
+        </div>
+    </div>
+
+    <div id="employeeTable"></div>
 
 </div>
 
+<div class="section">
+
+    <h2>Update Employee</h2>
+
+    <input
+        type="number"
+        id="updateId"
+        placeholder="Employee ID"
+    >
+
+    <input
+        type="number"
+        id="updateSalary"
+        placeholder="New Salary"
+    >
+
+    <input
+        type="number"
+        id="updateHike"
+        placeholder="New Hike"
+    >
+
+    <input
+        type="number"
+        step="0.1"
+        id="updateRating"
+        placeholder="New Rating"
+    >
+
+    <select id="updateLocation">
+
+        <option value="">
+            Select Location
+        </option>
+
+        <option value="Chennai">
+            Chennai
+        </option>
+
+        <option value="Bangalore">
+            Bangalore
+        </option>
+
+        <option value="Hyderabad">
+            Hyderabad
+        </option>
+
+        <option value="Mumbai">
+            Mumbai
+        </option>
+
+        <option value="Pune">
+            Pune
+        </option>
+
+    </select>
+
+    <select id="updateRole">
+
+        <option value="">
+            Select Role
+        </option>
+
+        <option value="Developer">
+            Developer
+        </option>
+
+        <option value="QA">
+            QA
+        </option>
+
+        <option value="DevOps">
+            DevOps
+        </option>
+
+        <option value="Manager">
+            Manager
+        </option>
+
+        <option value="Designer">
+            Designer
+        </option>
+
+    </select>
+
+    <br>
+
+    <button onclick="updateEmployee()">
+        Update Employee
+    </button>
+
+    <pre id="updateResult"></pre>
+
 </div>
+
+
+
+
+<!-- ===================================== -->
+<!-- DELETE EMPLOYEE -->
+<!-- ===================================== -->
+
+<div class="section">
+
+    <h2>Delete Employee</h2>
+
+    <input
+        type="number"
+        id="deleteId"
+        placeholder="Employee ID"
+    />
+
+    <button onclick="deleteEmployee()">
+        Delete Employee
+    </button>
+
+    <pre id="deleteResult"></pre>
+
+</div>
+<!-- ===================================== -->
+<!-- ASSIGN SECTION -->
+<!-- ===================================== -->
+
+<div
+    class="section"
+    id="assignSection"
+>
+
+    <h2>Assign Employees</h2>
+
+    <button onclick="assignEmployees()">
+        Assign Project
+    </button>
+
+    <pre id="assignResult"></pre>
+
+</div>
+
+
 
 <script>
 
-async function uploadFile(){
+let fetchedEmployees = [];
 
-    const file =
-        document.getElementById("employeeFile").files[0];
-
-    if(!file){
-        alert("Please select a file");
-        return;
-    }
-
-    const formData = new FormData();
-
-    formData.append("file", file);
-
-    document.getElementById(
-        "uploadLoader"
-    ).style.display = "block";
+async function callApi(url){
 
     try{
 
-        const response = await fetch(
+        const response =
+            await fetch(url);
+
+        const contentType =
+            response.headers.get(
+                "content-type"
+            );
+
+        let data;
+
+        if(
+            contentType &&
+            contentType.includes(
+                "application/json"
+            )
+        ){
+
+            data =
+                await response.json();
+
+            document.getElementById(
+                "result"
+            ).innerText =
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                );
+        }
+        else{
+
+            data =
+                await response.text();
+
+            document.getElementById(
+                "result"
+            ).innerText = data;
+        }
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        document.getElementById(
+            "result"
+        ).innerText =
+            "Request Failed";
+    }
+}
+
+
+async function clearDatabase(){
+
+    if(
+        !confirm(
+            "Clear entire database?"
+        )
+    ){
+        return;
+    }
+
+    const response =
+        await fetch(
+            "/clear-database"
+        );
+
+    const data =
+        await response.json();
+
+    alert(data.message);
+}
+
+
+async function uploadCSV(){
+
+    const file =
+        document.getElementById(
+            "fileInput"
+        ).files[0];
+
+    if(!file){
+
+        alert(
+            "Choose file first"
+        );
+
+        return;
+    }
+
+    let formData =
+        new FormData();
+
+    formData.append(
+        "file",
+        file
+    );
+
+    let bar =
+        document.getElementById(
+            "uploadBar"
+        );
+
+    document.getElementById(
+        "uploadLoader"
+    ).style.display =
+        "block";
+
+    let percent = 0;
+
+    let interval =
+        setInterval(() => {
+
+        percent += 10;
+
+        bar.style.width =
+            percent + "%";
+
+        bar.innerText =
+            percent + "%";
+
+        if(percent >= 100){
+
+            clearInterval(
+                interval
+            );
+        }
+
+    },200);
+
+    const response =
+        await fetch(
             "/upload-csv",
             {
                 method:"POST",
@@ -239,85 +602,221 @@ async function uploadFile(){
             }
         );
 
-        const result =
-            await response.json();
-
-        document.getElementById(
-            "uploadResult"
-        ).innerText =
-            JSON.stringify(result,null,2);
-
-    }
-    catch(error){
-
-        alert("Upload Failed");
-
-        console.error(error);
-    }
+    const data =
+        await response.json();
 
     document.getElementById(
-        "uploadLoader"
-    ).style.display = "none";
+        "uploadResult"
+    ).innerText =
+        JSON.stringify(
+            data,
+            null,
+            2
+        );
 }
+
+
+async function updateEmployee(){
+
+    const empId =
+        document.getElementById(
+            "updateId"
+        ).value;
+
+    if(!empId){
+
+        alert(
+            "Enter Employee ID"
+        );
+
+        return;
+    }
+
+    let payload = {};
+
+    const salary =
+        document.getElementById(
+            "updateSalary"
+        ).value;
+
+    const hike =
+        document.getElementById(
+            "updateHike"
+        ).value;
+
+    const rating =
+        document.getElementById(
+            "updateRating"
+        ).value;
+
+    const location =
+        document.getElementById(
+            "updateLocation"
+        ).value;
+
+    const role =
+        document.getElementById(
+            "updateRole"
+        ).value;
+
+    if(salary)
+        payload.present_salary =
+            parseInt(salary);
+
+    if(hike)
+        payload.expected_hike =
+            parseInt(hike);
+
+    if(rating)
+        payload.performance_rating =
+            parseFloat(rating);
+
+    if(location)
+        payload.work_location =
+            location;
+
+    if(role)
+        payload.role =
+            role;
+
+    const response =
+        await fetch(
+            "/employee/" + empId,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type":
+                    "application/json"
+                },
+
+                body: JSON.stringify(
+                    payload
+                )
+            }
+        );
+
+    const result =
+        await response.json();
+
+    document.getElementById(
+        "updateResult"
+    ).innerText =
+        JSON.stringify(
+            result,
+            null,
+            2
+        );
+}
+
+
 
 async function fetchEmployees(){
 
     document.getElementById(
         "fetchLoader"
-    ).style.display = "block";
+    ).style.display =
+        "block";
 
-    let params = new URLSearchParams();
+    let params =
+        new URLSearchParams();
 
     const empId =
-        document.getElementById("id").value;
+        document.getElementById(
+            "id"
+        ).value;
 
-    const location =
-        document.getElementById("location").value;
+    const locationValue =
+        document.getElementById(
+            "location"
+        ).value;
 
-    const salary =
-        document.getElementById("salary").value;
+    const salaryMinValue =
+        document.getElementById(
+            "salaryMin"
+        ).value;
 
-    const hike =
-        document.getElementById("hike").value;
+    const salaryMaxValue =
+        document.getElementById(
+            "salaryMax"
+        ).value;
 
-    const rating =
-        document.getElementById("rating").value;
+    const hikeValue =
+        document.getElementById(
+            "hike"
+        ).value;
 
-    const role =
-        document.getElementById("role").value;
+    const ratingValue =
+        document.getElementById(
+            "rating"
+        ).value;
 
-    if(empId)
-        params.append("id", empId);
+    const roleValue =
+        document.getElementById(
+            "role"
+        ).value;
 
-    if(location)
+    if(empId){
+
+        params.append(
+            "id",
+            empId
+        );
+    }
+
+    if(locationValue){
+
         params.append(
             "work_location",
-            location
+            locationValue
         );
+    }
 
-    if(salary)
+    if(salaryMinValue){
+
         params.append(
-            "salary",
-            salary
+            "salary_min",
+            salaryMinValue
         );
+    }
 
-    if(hike)
+    if(salaryMaxValue){
+
+        params.append(
+            "salary_max",
+            salaryMaxValue
+        );
+    }
+
+    if(hikeValue){
+
         params.append(
             "expected_hike",
-            hike
+            hikeValue
         );
+    }
 
-    if(rating)
+    if(ratingValue){
+
         params.append(
             "performance_rating",
-            rating
+            ratingValue
         );
+    }
 
-    if(role)
+    if(roleValue){
+
         params.append(
             "role",
-            role
+            roleValue
         );
+    }
+
+    console.log(
+        "FETCH URL:",
+        "/fetch?" +
+        params.toString()
+    );
 
     try{
 
@@ -327,27 +826,32 @@ async function fetchEmployees(){
                 params.toString()
             );
 
-        const data =
+        fetchedEmployees =
             await response.json();
 
-        createTable(data);
-
+        createTable(
+            fetchedEmployees
+        );
     }
     catch(error){
 
         console.error(error);
 
-        alert("Fetch Failed");
+        alert(
+            "Fetch Failed"
+        );
     }
 
     document.getElementById(
         "fetchLoader"
-    ).style.display = "none";
+    ).style.display =
+        "none";
 }
+
 
 function createTable(data){
 
-    if(data.length === 0){
+    if(data.length===0){
 
         document.getElementById(
             "employeeTable"
@@ -357,8 +861,10 @@ function createTable(data){
         return;
     }
 
-    let html = `
-    <table>
+    let html =
+        "<table>";
+
+    html += `
     <tr>
     <th>ID</th>
     <th>Location</th>
@@ -369,7 +875,7 @@ function createTable(data){
     </tr>
     `;
 
-    data.forEach(emp => {
+    data.forEach(emp=>{
 
         html += `
         <tr>
@@ -390,48 +896,145 @@ function createTable(data){
     ).innerHTML = html;
 }
 
+
 function goToAssign(){
 
     document
-    .getElementById("assignSection")
+    .getElementById(
+        "assignSection"
+    )
     .scrollIntoView({
         behavior:"smooth"
     });
 }
 
-async function assignEmployees(){
+
+
+function assignEmployees(){
+
+    const assignedEmployees =
+        fetchedEmployees.map(emp=>{
+
+            let project="";
+            let team="";
+
+            if(emp.performance_rating>=4.5)
+                project=
+                "Project Platinum";
+
+            else if(
+                emp.performance_rating>=4
+            )
+                project=
+                "Project Gold";
+
+            else
+                project=
+                "Project Silver";
+
+            if(
+                emp.role.toLowerCase()
+                ==="developer"
+            )
+                team=
+                "Backend Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="qa"
+            )
+                team=
+                "Testing Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="designer"
+            )
+                team=
+                "UI/UX Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="devops"
+            )
+                team=
+                "Infrastructure Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="manager"
+            )
+                team=
+                "Management Team";
+
+            else
+                team=
+                "Support Team";
+
+            return {
+
+                ...emp,
+
+                assigned_project:
+                    project,
+
+                assigned_team:
+                    team
+            };
+        });
 
     document.getElementById(
-        "assignLoader"
-    ).style.display = "block";
+        "assignResult"
+    ).innerText =
+        JSON.stringify(
+            {
+                selected_count:
+                    assignedEmployees.length,
 
-    try{
+                employees:
+                    assignedEmployees
+            },
+            null,
+            2
+        );
+}
 
-        const response =
-            await fetch("/aggregate");
 
-        const result =
-            await response.json();
+async function deleteEmployee(){
 
+    const empId =
         document.getElementById(
-            "assignResult"
-        ).innerText =
-            JSON.stringify(
-                result,
-                null,
-                2
-            );
-    }
-    catch(error){
+            "deleteId"
+        ).value;
 
-        console.error(error);
+    if(!empId){
 
-        alert("Assignment Failed");
+        alert(
+            "Enter Employee ID"
+        );
+
+        return;
     }
+
+    const response =
+        await fetch(
+            "/employee/" + empId,
+            {
+                method:"DELETE"
+            }
+        );
+
+    const result =
+        await response.json();
 
     document.getElementById(
-        "assignLoader"
-    ).style.display = "none";
+        "deleteResult"
+    ).innerText =
+        JSON.stringify(
+            result,
+            null,
+            2
+        );
 }
 
 </script>

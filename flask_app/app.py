@@ -1,24 +1,74 @@
+# Flask imports
+# Flask -> creates web application
+# request -> reads incoming HTTP requests
+# jsonify -> returns JSON response
+# render_template -> loads HTML pages
 from flask import Flask, request, jsonify, render_template
+
+# MongoDB client library
 from pymongo import MongoClient
+
+# Loads variables from .env file
 from dotenv import load_dotenv
+
+# Used to read environment variables
 import os
+
+# Used to read CSV files
 import pandas as pd
 
-# Load environment variables
+
+# ==========================================
+# LOAD ENVIRONMENT VARIABLES
+# ==========================================
+# Reads .env file
 load_dotenv()
 
+
+# ==========================================
+# CREATE FLASK APPLICATION
+# ==========================================
 app = Flask(__name__)
 
-# MongoDB Connection
+
+# ==========================================
+# MONGODB CONNECTION
+# ==========================================
+# Reads MongoDB Connection string from .env
 client = MongoClient(os.getenv("MONGO_URI"))
+
+#check whether mongodb is reachable
+try:
+     # Ping database server to check connection
+    client.admin.command("ping")
+    print("MongoDB Ping Successful")
+except Exception as e:
+    print("MongoDB Ping Failed")
+    print(e)
+
+# Select database    
 db = client[os.getenv("DB_NAME")]
+
+# Select collection
 collection = db[os.getenv("COLLECTION_NAME")]
 print("MongoDB Connected Successfully")
+
+# ==========================================
+# DATABASE TEST API
+# URL:
+# http://localhost:5000/dbtest
+#
+# Purpose:
+# Verify MongoDB connection
+# ==========================================
 
 #dbtest
 @app.route("/dbtest")
 def dbtest():
     try:
+        
+        # Count documents in collection
+        # If this works, MongoDB is connected
         collection.count_documents({})
         return "MongoDB Connected"
     except Exception as e:
@@ -28,7 +78,7 @@ def dbtest():
 #check connection
 @app.route("/hello")
 def hello():
-    return "Hello jagadeesh"
+    return "Hello user"
 
 
 # Home Page
@@ -62,6 +112,8 @@ def add_employee():
             "message": "Bulk insert completed",
             "inserted_count": inserted
         })
+
+
 
     # Single Insert
     existing = collection.find_one(
@@ -107,27 +159,142 @@ def remove_duplicates():
     })
 
 
+# ==========================================
+# UPDATE EMPLOYEE
+# ==========================================
 
+@app.route("/employee/<int:emp_id>", methods=["PUT"])
+def update_employee(emp_id):
+
+    data = request.get_json()
+
+    update_fields = {}
+
+    # Only update fields provided by user
+
+    if "present_salary" in data:
+        update_fields["present_salary"] = int(
+            data["present_salary"]
+        )
+
+    if "expected_hike" in data:
+        update_fields["expected_hike"] = int(
+            data["expected_hike"]
+        )
+
+    if "performance_rating" in data:
+        update_fields["performance_rating"] = float(
+            data["performance_rating"]
+        )
+
+    if "work_location" in data:
+        update_fields["work_location"] = (
+            data["work_location"]
+        )
+
+    if "role" in data:
+        update_fields["role"] = (
+            data["role"]
+        )
+
+    # Nothing entered
+
+    if not update_fields:
+
+        return jsonify({
+            "message":
+            "No fields provided for update"
+        }), 400
+
+    result = collection.update_one(
+        {"id": emp_id},
+        {"$set": update_fields}
+    )
+
+    if result.matched_count == 0:
+
+        return jsonify({
+            "message":
+            "Employee not found"
+        }), 404
+
+    return jsonify({
+        "message":
+        "Employee updated successfully"
+    })
+
+
+
+
+@app.route("/test-update")
+def test_update():
+
+    result = collection.update_one(
+        {"id": 1001},
+        {
+            "$set": {
+                "present_salary": 200000
+            }
+        }
+    )
+
+    return jsonify({
+        "matched": result.matched_count,
+        "modified": result.modified_count
+    })
+
+# ==========================================
+# FETCH EMPLOYEES API
+#
+# Purpose:
+# Fetch employees using filters
+#
+# Supported Filters:
+# id
+# work_location
+# salary_min
+# salary_max
+# expected_hike
+# performance_rating
+# role
+# ==========================================
 # GET API - Fetch Employees
 @app.route("/fetch", methods=["GET"])
 
 def fetch_employee():
-
+    # MongoDB query object
     query = {}
 
+    # Filter by employee ID
     if request.args.get("id"):
         query["id"] = int(request.args.get("id"))
-
+        
+    # Case-insensitive location search
     if request.args.get("work_location"):
         query["work_location"] = {
             "$regex": request.args.get("work_location"),
             "$options": "i"
         }
+    
+    # Salary range filter
+    salary_query = {}
 
-    if request.args.get("salary"):
-        query["present_salary"] = int(
-            request.args.get("salary")
+    #Minimum salary filter
+    
+    if request.args.get("salary_min"):
+        salary_query["$gte"] = int(
+            request.args.get("salary_min")
         )
+
+    #Maximum salary filter
+    if request.args.get("salary_max"):
+        salary_query["$lte"] = int(
+            request.args.get("salary_max")
+        )
+
+    #Add salary condition to main query if any salary filter is applied
+    if salary_query:
+        query["present_salary"] = salary_query
 
     if request.args.get("expected_hike"):
         query["expected_hike"] = int(
@@ -144,21 +311,25 @@ def fetch_employee():
             "$regex": request.args.get("role"),
             "$options": "i"
         }
-
+    print("QUERY =", query)
+    #fetch employees based on query
     employees = list(
         collection.find(
             query,
             {"_id": 0}
         )
     )
-
+    
+    #retuen json response
     return jsonify(employees)
 
 
-# Aggregate API - Assign Employees to Project
-@app.route("/aggregate", methods=["GET"])
-def aggregate():
 
+
+
+# Assign  - Assign Employees to Project
+@app.route("/assign", methods=["GET"])
+def assign():
     rating = float(request.args.get("rating", 4))
     hike = float(request.args.get("hike", 20))
     role = request.args.get("role")
@@ -176,15 +347,79 @@ def aggregate():
     )
 
     assigned_employees = []
-
+    
     for emp in employees:
-        emp["assigned_project"] = "Project Phoenix"
-        assigned_employees.append(emp)
+
+        rating = emp.get(
+            "performance_rating",
+        0
+    )
+
+        role = emp.get(
+            "role",
+        ""
+    ).lower()
+
+    # Main Project Assignment based on performance rating
+    if rating >= 4.5:
+
+        emp["assigned_project"] = (
+            "Project Platinum"
+        )
+
+    elif rating >= 4.0:
+
+        emp["assigned_project"] = (
+            "Project Gold"
+        )
+
+    else:
+
+        emp["assigned_project"] = (
+            "Project Silver"
+        )
+
+    # Sub Assignment
+    if role == "developer":
+
+        emp["assigned_team"] = (
+            "Backend Team"
+        )
+
+    elif role == "qa":
+
+        emp["assigned_team"] = (
+            "Testing Team"
+        )
+
+    elif role == "designer":
+
+        emp["assigned_team"] = (
+            "UI/UX Team"
+        )
+
+    elif role == "devops":
+
+        emp["assigned_team"] = (
+            "Infrastructure Team"
+        )
+
+    else:
+
+        emp["assigned_team"] = (
+            "Support Team"
+        )
+
+    assigned_employees.append(emp)
+
+ 
 
     return jsonify({
         "selected_count": len(assigned_employees),
         "employees": assigned_employees
     })
+
+
 
 
 #verify data in mongodb
@@ -193,6 +428,8 @@ def test():
     employees = list(collection.find({}, {"_id": 0})
     )
     return jsonify(employees)
+
+
 
 
 #data upload from csv
@@ -209,7 +446,39 @@ def upload_csv():
 
     file = request.files["file"]
 
+    
+
     df = pd.read_csv(file)
+
+    # Remove accidental header rows inside data
+    df = df[df["id"] != "id"]
+
+    # Convert columns
+    df["id"] = pd.to_numeric(df["id"])
+
+    df["present_salary"] = pd.to_numeric(
+        df["present_salary"]
+    )
+
+    df["expected_hike"] = pd.to_numeric(
+        df["expected_hike"]
+    )
+
+    df["performance_rating"] = pd.to_numeric(
+        df["performance_rating"]
+    )
+
+    df["present_salary"] = (
+        df["present_salary"].astype(int)
+    )
+
+    df["expected_hike"] = (
+        df["expected_hike"].astype(int)
+    )
+
+    df["performance_rating"] = (
+        df["performance_rating"].astype(float)
+    )
 
     csv_count = len(df)
 
@@ -224,6 +493,8 @@ def upload_csv():
         "csv_records": csv_count,
         "database_records": db_count
     })
+
+
 
 # Employee Count API
 @app.route("/employee-count", methods=["GET"])
@@ -253,6 +524,7 @@ def salary_stats():
     return jsonify(result)
 
 
+
 #clear database
 @app.route("/clear-database", methods=["GET","DELETE"])
 def clear_database():
@@ -264,9 +536,32 @@ def clear_database():
         "deleted_count": result.deleted_count
     })
 
+# ==========================================
+# DELETE EMPLOYEE
+# ==========================================
+
+@app.route("/employee/<int:emp_id>", methods=["DELETE"])
+def delete_employee(emp_id):
+
+    result = collection.delete_one(
+        {"id": emp_id}
+    )
+
+    if result.deleted_count == 0:
+
+        return jsonify({
+            "message":
+            "Employee not found"
+        }), 404
+
+    return jsonify({
+        "message":
+        "Employee deleted successfully"
+    })
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
