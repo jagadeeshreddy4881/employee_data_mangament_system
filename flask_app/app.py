@@ -289,8 +289,6 @@ def update_employee(emp_id):
         "Employee updated successfully"
     })
 
-
-
 @app.route("/test-update")
 def test_update():
 
