@@ -17,6 +17,22 @@ import os
 # Used to read CSV files
 import pandas as pd
 
+#Used to store: date and time for every action
+from datetime import datetime
+
+# ==========================================
+# FILE EXPORT LIBRARIES
+# ==========================================
+
+# send_file
+# Used to return downloadable files
+# from Flask APIs
+from flask import send_file
+
+# csv
+# Built-in Python module used to
+# create and write CSV files
+import csv
 
 # ==========================================
 # LOAD ENVIRONMENT VARIABLES
@@ -52,6 +68,42 @@ db = client[os.getenv("DB_NAME")]
 # Select collection
 collection = db[os.getenv("COLLECTION_NAME")]
 print("MongoDB Connected Successfully")
+
+# ==========================================
+# AUDIT LOG COLLECTION
+#
+# Stores all employee activity logs
+# ==========================================
+
+audit_collection = db["audit_logs"]
+
+# ==========================================
+# AUDIT LOGGER
+#
+# Purpose:
+# Store employee activity logs.
+#
+# Why:
+# Track all important operations.
+# ==========================================
+
+def create_audit_log(
+    action,
+    employee_id,
+    message
+):
+
+    audit_collection.insert_one({
+
+        "action": action,
+
+        "employee_id": employee_id,
+
+        "message": message,
+
+        "timestamp":
+            datetime.now()
+    })
 
 # ==========================================
 # DATABASE TEST API
@@ -126,7 +178,12 @@ def add_employee():
         }), 409
 
     result = collection.insert_one(data)
-
+    create_audit_log(
+    "ADD",
+    data["id"],
+    "Employee added"
+    )
+    
     return jsonify({
         "message": "Employee inserted successfully",
         "inserted_id": str(result.inserted_id)
@@ -217,12 +274,20 @@ def update_employee(emp_id):
             "message":
             "Employee not found"
         }), 404
+    
+    #create AUDIT log to track employee update activity.
+    #to maintain history of changes made in records.
+    
+    create_audit_log(
+        "UPDATE",
+        emp_id,
+        "Employee updated"
+    )
 
     return jsonify({
         "message":
         "Employee updated successfully"
     })
-
 
 
 
@@ -260,7 +325,6 @@ def test_update():
 # ==========================================
 # GET API - Fetch Employees
 @app.route("/fetch", methods=["GET"])
-
 def fetch_employee():
     # MongoDB query object
     query = {}
@@ -554,13 +618,188 @@ def delete_employee(emp_id):
             "Employee not found"
         }), 404
 
+    create_audit_log(
+        "DELETE",
+        emp_id,
+        "Employee deleted"
+    )
+
     return jsonify({
         "message":
         "Employee deleted successfully"
     })
 
+# ==========================================
+# DYNAMIC FILTER APIs
+#
+# Purpose:
+# Populate frontend dropdowns dynamically
+# from MongoDB instead of hardcoding values.
+#
+# Benefits:
+# 1. New locations automatically appear
+# 2. New roles automatically appear
+# 3. New hike values automatically appear
+# 4. New ratings automatically appear
+# 5. No need to modify HTML whenever
+#    employee data changes
+# ==========================================
 
 
+# Fetch all unique work locations
+# Used to populate Location dropdown
+@app.route("/locations")
+def get_locations():
+
+    locations = collection.distinct(
+        "work_location"
+    )
+
+    return jsonify(
+        sorted(locations)
+    )
+
+
+# Fetch all unique employee roles
+# Used to populate Role dropdown
+@app.route("/roles")
+def get_roles():
+
+    roles = collection.distinct(
+        "role"
+    )
+
+    return jsonify(
+        sorted(roles)
+    )
+
+
+# Fetch all unique expected hike values
+# Used to populate Hike dropdown
+@app.route("/hikes")
+def get_hikes():
+
+    hikes = collection.distinct(
+        "expected_hike"
+    )
+
+    hikes = [
+        h for h in hikes
+        if h is not None
+    ]
+
+    return jsonify(
+        sorted(hikes)
+    )
+
+# Fetch all unique performance ratings
+# Used to populate Rating dropdown
+@app.route("/ratings")
+def get_ratings():
+
+    ratings = collection.distinct(
+        "performance_rating"
+    )
+
+    ratings = [
+        r for r in ratings
+        if r is not None
+    ]
+
+    return jsonify(
+        sorted(ratings)
+    )
+
+
+# ==========================================
+# EXPORT FILTERED EMPLOYEES TO CSV
+#
+# Purpose:
+# Download employee data matching
+# selected filters as a CSV file.
+#
+# Why:
+# HR users can export employee reports
+# and open them in Excel.
+# ==========================================
+
+@app.route("/export-csv")
+def export_csv():
+
+    # MongoDB query object
+    query = {} #Stores filters selected by the user.
+
+    # Filter by location
+    if request.args.get("work_location"):
+
+        query["work_location"] = {
+            "$regex": request.args.get(
+                "work_location"
+            ),
+            "$options": "i"
+        }
+
+    # Filter by role
+    if request.args.get("role"):
+
+        query["role"] = {
+            "$regex": request.args.get(
+                "role"
+            ),
+            "$options": "i"
+        }
+
+    # Fetch matching employees
+    employees = list(
+        collection.find(  #Fetches only matching employees from MongoDB.
+            query,
+            {"_id": 0}
+        )
+    )
+
+    # CSV file name
+    file_name = "filtered_employees.csv"
+
+    # Create CSV file
+    with open(
+        file_name,
+        "w",
+        newline=""
+    ) as file:
+
+        # Write only if employees exist
+        if employees:
+
+            writer = csv.DictWriter(
+                file,
+                fieldnames=
+                employees[0].keys() #Gets column names automatically:
+            )
+
+            # Write column names
+            writer.writeheader() #Creates CSV header row.
+
+            # Write employee records
+            writer.writerows( #Writes all employee records.
+                employees
+            )
+
+    # Return downloadable file
+    return send_file( #Makes browser download the generated CSV.
+        file_name,
+        as_attachment=True
+    )
+
+@app.route("/audit-logs")
+def audit_logs():
+    logs = list(
+        audit_collection.find(
+            {},
+            {"_id":0}
+        )
+        .sort("timestamp",-1)
+    )
+    return jsonify(logs)
 
 
 if __name__ == "__main__":
