@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Management System</title>
+
+    <style>
+
+        body{
+            font-family: Arial, sans-serif;
+            margin:20px;
+            background:#f4f6f9;
+        }
+
+        h1{
+            text-align:center;
+            color:#333;
+        }
+
+        .section{
+            background:white;
+            padding:20px;
+            margin-bottom:20px;
+            border-radius:10px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        button{
+            padding:10px 15px;
+            margin:5px;
+            cursor:pointer;
+            border:none;
+            background:#007bff;
+            color:white;
+            border-radius:5px;
+        }
+
+        button:hover{
+            background:#0056b3;
+        }
+
+        input{
+            padding:8px;
+            margin:5px;
+        }
+        select{
+            padding:8px;
+            margin:5px;
+        }
+        
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:15px;
+        }
+
+        table,th,td{
+            border:1px solid #ccc;
+        }
+
+        th,td{
+            padding:10px;
+            text-align:center;
+        }
+
+        th{
+            background:#007bff;
+            color:white;
+        }
+
+        .loader-container{
+            width:100%;
+            background:#ddd;
+            border-radius:10px;
+            overflow:hidden;
+            display:none;
+            margin-top:10px;
+        }
+
+        .loader-bar{
+            width:0%;
+            height:20px;
+            background:green;
+            text-align:center;
+            color:white;
+            line-height:20px;
+        }
+
+        pre{
+            background:#eee;
+            padding:10px;
+            overflow:auto;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h1>Employee Management System</h1>
+
+<!-- ===================================== -->
+<!-- SYSTEM OPERATIONS -->
+<!-- ===================================== -->
+
+<div class="section">
+
+    <h2>System Operations</h2>
+
+    <button onclick="callApi('/dbtest')">
+        Database Test
+    </button>
+
+    <button onclick="callApi('/hello')">
+        Hello Test
+    </button>
+
+    <button onclick="callApi('/test')">
+        View All Employees
+    </button>
+
+    <button onclick="callApi('/employee-count')">
+        Employee Count
+    </button>
+
+    <button onclick="callApi('/salary-stats')">
+        Salary Statistics
+    </button>
+
+    <button onclick="callApi('/remove-duplicates')">
+        Remove Duplicates
+    </button>
+
+    <button onclick="clearDatabase()">
+        Clear Database
+    </button>
+
+    <pre id="result"></pre>
+
+</div>
+
+
+<!-- ===================================== -->
+<!-- CSV UPLOAD -->
+<!-- ===================================== -->
+
+<div class="section">
+
+    <h2>Upload Employee CSV</h2>
+
+    <input
+        type="file"
+        id="fileInput"
+    >
+
+    <button onclick="uploadCSV()">
+        Upload CSV
+    </button>
+
+    <div
+        class="loader-container"
+        id="uploadLoader"
+    >
+
+        <div
+            class="loader-bar"
+            id="uploadBar"
+        >
+            0%
+        </div>
+
+    </div>
+
+    <pre id="uploadResult"></pre>
+
+</div>
+
+
+<!-- ===================================== -->
+<!-- FETCH EMPLOYEES -->
+<!-- ===================================== -->
+
+<div class="section">
+
+    <h2>Fetch Employees</h2>
+
+    <input
+        type="number"
+        id="id"
+        placeholder="Employee ID"
+    >
+
+
+
+    <input
+        type="number"
+        id="salaryMin"
+        placeholder="Min Salary"
+    >
+
+    <input
+        type="number"
+        id="salaryMax"
+        placeholder="Max Salary"
+    >
+
+<select id="location">
+
+    <option value="">
+        Select Location
+    </option>
+
+</select>
+
+<select id="hike">
+
+    <option value="">
+        Select Hike
+    </option>
+
+</select>
+
+<select id="rating">
+
+    <option value="">
+        Select Rating
+    </option>
+
+</select>
+
+<select id="role">
+
+    <option value="">
+        Select Role
+    </option>
+
+</select>
+
+    <br>
+
+    <button onclick="fetchEmployees()">
+        Fetch Employees
+    </button>
+
+    <button onclick="goToAssign()">
+        Go To Assign Section
+    </button>
+
+    <button onclick="exportCSV()">
+        Export CSV
+    </button>
+
+    <div
+        class="loader-container"
+        id="fetchLoader"
+    >
+        <div
+            class="loader-bar"
+            id="fetchBar"
+        >
+            Loading...
+        </div>
+    </div>
+
+    <div id="employeeTable"></div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- ADD EMPLOYEE -->
+<!-- ===================================== -->
+<div class="section">
+
+    <h2>Add Employee</h2>
+
+    <input type="number" id="newId" placeholder="Employee ID">
+
+    <input type="number" id="newSalary" placeholder="Salary">
+
+    <input type="number" id="newHike" placeholder="Expected Hike">
+
+    <input type="number" step="0.1" id="newRating" placeholder="Performance Rating">
+
+    <input type="text" id="newRole" placeholder="Role">
+
+    <input type="text" id="newLocation" placeholder="Location">
+
+    <button onclick="addEmployee()">
+        Add Employee
+    </button>
+
+    <pre id="addResult"></pre>
+
+</div>
+
+<!-- ===================================== -->
+<!-- Update EMPLOYEE -->
+<!-- ===================================== -->
+<div class="section">
+
+    <h2>Update Employee</h2>
+
+    <input
+        type="number"
+        id="updateId"
+        placeholder="Employee ID"
+    >
+
+    <input
+        type="number"
+        id="updateSalary"
+        placeholder="New Salary"
+    >
+
+    <input
+        type="number"
+        id="updateHike"
+        placeholder="New Hike"
+    >
+
+    <input
+        type="number"
+        step="0.1"
+        id="updateRating"
+        placeholder="New Rating"
+    >
+
+    <select id="updateLocation">
+
+        <option value="">
+            Select Location
+        </option>
+
+        <option value="Chennai">
+            Chennai
+        </option>
+
+        <option value="Bangalore">
+            Bangalore
+        </option>
+
+        <option value="Hyderabad">
+            Hyderabad
+        </option>
+
+        <option value="Mumbai">
+            Mumbai
+        </option>
+
+        <option value="Pune">
+            Pune
+        </option>
+
+    </select>
+
+    <select id="updateRole">
+
+        <option value="">
+            Select Role
+        </option>
+
+        <option value="Developer">
+            Developer
+        </option>
+
+        <option value="QA">
+            QA
+        </option>
+
+        <option value="DevOps">
+            DevOps
+        </option>
+
+        <option value="Manager">
+            Manager
+        </option>
+
+        <option value="Designer">
+            Designer
+        </option>
+
+    </select>
+
+    <br>
+
+    <button onclick="updateEmployee()">
+        Update Employee
+    </button>
+
+    <pre id="updateResult"></pre>
+
+</div>
+
+<!-- ===================================== -->
+<!-- DELETE EMPLOYEE -->
+<!-- ===================================== -->
+
+<div class="section">
+
+    <h2>Delete Employee</h2>
+
+    <input
+        type="number"
+        id="deleteId"
+        placeholder="Employee ID"
+    />
+
+    <button onclick="deleteEmployee()">
+        Delete Employee
+    </button>
+
+    <pre id="deleteResult"></pre>
+
+</div>
+<!-- ===================================== -->
+<!-- ASSIGN SECTION -->
+<!-- ===================================== -->
+
+<div
+    class="section"
+    id="assignSection"
+>
+
+    <h2>Assign Employees</h2>
+
+    <button onclick="exportAssignedCSV()">
+        Export Assigned CSV after Assigning
+    </button>
+
+    <button onclick="assignEmployees()">
+        Assign Project
+    </button>
+
+    <pre id="assignResult"></pre>
+
+
+
+</div>
+
+
+
+<script>
+
+let fetchedEmployees = [];
+// Stores assigned employees
+let assignedEmployees = [];
+
+async function callApi(url){
+
+    try{
+
+        const response =
+            await fetch(url);
+
+        const contentType =
+            response.headers.get(
+                "content-type"
+            );
+
+        let data;
+
+        if(
+            contentType &&
+            contentType.includes(
+                "application/json"
+            )
+        ){
+
+            data =
+                await response.json();
+
+            document.getElementById(
+                "result"
+            ).innerText =
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                );
+        }
+        else{
+
+            data =
+                await response.text();
+
+            document.getElementById(
+                "result"
+            ).innerText = data;
+        }
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        document.getElementById(
+            "result"
+        ).innerText =
+            "Request Failed";
+    }
+}
+
+async function clearDatabase(){
+
+    if(
+        !confirm(
+            "Clear entire database?"
+        )
+    ){
+        return;
+    }
+
+    const response =
+        await fetch(
+            "/clear-database"
+        );
+
+    const data =
+        await response.json();
+
+    alert(data.message);
+}
+
+async function uploadCSV(){
+
+    const file =
+        document.getElementById(
+            "fileInput"
+        ).files[0];
+
+    if(!file){
+
+        alert(
+            "Choose file first"
+        );
+
+        return;
+    }
+
+    let formData =
+        new FormData();
+
+    formData.append(
+        "file",
+        file
+    );
+
+    let bar =
+        document.getElementById(
+            "uploadBar"
+        );
+
+    document.getElementById(
+        "uploadLoader"
+    ).style.display =
+        "block";
+
+    let percent = 0;
+
+    let interval =
+        setInterval(() => {
+
+        percent += 10;
+
+        bar.style.width =
+            percent + "%";
+
+        bar.innerText =
+            percent + "%";
+
+        if(percent >= 100){
+
+            clearInterval(
+                interval
+            );
+        }
+
+    },200);
+
+    const response =
+        await fetch(
+            "/upload-csv",
+            {
+                method:"POST",
+                body:formData
+            }
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "uploadResult"
+    ).innerText =
+        JSON.stringify(
+            data,
+            null,
+            2
+        );
+}
+
+async function updateEmployee(){
+
+    const empId =
+        document.getElementById(
+            "updateId"
+        ).value;
+
+    if(!empId){
+
+        alert(
+            "Enter Employee ID"
+        );
+
+        return;
+    }
+
+    let payload = {};
+
+    const salary =
+        document.getElementById(
+            "updateSalary"
+        ).value;
+
+    const hike =
+        document.getElementById(
+            "updateHike"
+        ).value;
+
+    const rating =
+        document.getElementById(
+            "updateRating"
+        ).value;
+
+    const location =
+        document.getElementById(
+            "updateLocation"
+        ).value;
+
+    const role =
+        document.getElementById(
+            "updateRole"
+        ).value;
+
+    if(salary)
+        payload.present_salary =
+            parseInt(salary);
+
+    if(hike)
+        payload.expected_hike =
+            parseInt(hike);
+
+    if(rating)
+        payload.performance_rating =
+            parseFloat(rating);
+
+    if(location)
+        payload.work_location =
+            location;
+
+    if(role)
+        payload.role =
+            role;
+
+    const response =
+        await fetch(
+            "/employee/" + empId,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type":
+                    "application/json"
+                },
+
+                body: JSON.stringify(
+                    payload
+                )
+            }
+        );
+
+    const result =
+        await response.json();
+
+    document.getElementById(
+        "updateResult"
+    ).innerText =
+        JSON.stringify(
+            result,
+            null,
+            2
+        );
+    loadFilters();
+}
+
+async function fetchEmployees(){
+
+    document.getElementById(
+        "fetchLoader"
+    ).style.display =
+        "block";
+
+    let params =
+        new URLSearchParams();
+
+    const empId =
+        document.getElementById(
+            "id"
+        ).value;
+
+    const locationValue =
+        document.getElementById(
+            "location"
+        ).value;
+
+    const salaryMinValue =
+        document.getElementById(
+            "salaryMin"
+        ).value;
+
+    const salaryMaxValue =
+        document.getElementById(
+            "salaryMax"
+        ).value;
+
+    const hikeValue =
+        document.getElementById(
+            "hike"
+        ).value;
+
+    const ratingValue =
+        document.getElementById(
+            "rating"
+        ).value;
+
+    const roleValue =
+        document.getElementById(
+            "role"
+        ).value;
+
+    if(empId){
+
+        params.append(
+            "id",
+            empId
+        );
+    }
+
+    if(locationValue){
+
+        params.append(
+            "work_location",
+            locationValue
+        );
+    }
+
+    if(salaryMinValue){
+
+        params.append(
+            "salary_min",
+            salaryMinValue
+        );
+    }
+
+    if(salaryMaxValue){
+
+        params.append(
+            "salary_max",
+            salaryMaxValue
+        );
+    }
+
+    if(hikeValue){
+
+        params.append(
+            "expected_hike",
+            hikeValue
+        );
+    }
+
+    if(ratingValue){
+
+        params.append(
+            "performance_rating",
+            ratingValue
+        );
+    }
+
+    if(roleValue){
+
+        params.append(
+            "role",
+            roleValue
+        );
+    }
+
+    console.log(
+        "FETCH URL:",
+        "/fetch?" +
+        params.toString()
+    );
+
+    try{
+
+        const response =
+            await fetch(
+                "/fetch?" +
+                params.toString()
+            );
+
+        fetchedEmployees =
+            await response.json();
+
+        createTable(
+            fetchedEmployees
+        );
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+            "Fetch Failed"
+        );
+    }
+
+    document.getElementById(
+        "fetchLoader"
+    ).style.display =
+        "none";
+}
+
+async function addEmployee(){
+
+    const employee = {
+
+        id: parseInt(
+            document.getElementById("newId").value
+        ),
+
+        present_salary: parseInt(
+            document.getElementById("newSalary").value
+        ),
+
+        expected_hike: parseInt(
+            document.getElementById("newHike").value
+        ),
+
+        performance_rating: parseFloat(
+            document.getElementById("newRating").value
+        ),
+
+        role:
+            document.getElementById("newRole").value,
+
+        work_location:
+            document.getElementById("newLocation").value
+    };
+
+    const response = await fetch(
+        "/employee",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify(employee)
+        }
+    );
+
+    const result = await response.json();
+
+    document.getElementById(
+        "addResult"
+    ).innerText =
+        JSON.stringify(
+            result,
+            null,
+            2
+        );
+    loadFilters();
+}
+
+
+async function deleteEmployee(){
+
+    const empId =
+        document.getElementById(
+            "deleteId"
+        ).value;
+
+    if(!empId){
+
+        alert(
+            "Enter Employee ID"
+        );
+
+        return;
+    }
+
+    const response =
+        await fetch(
+            "/employee/" + empId,
+            {
+                method:"DELETE"
+            }
+        );
+
+    const result =
+        await response.json();
+
+    document.getElementById(
+        "deleteResult"
+    ).innerText =
+        JSON.stringify(
+            result,
+            null,
+            2
+        );
+}
+
+
+// ==========================================
+// LOAD FILTER VALUES
+//
+// Purpose:
+// Load filter dropdown values dynamically
+// from MongoDB through backend APIs.
+//
+// Why:
+// Prevent hardcoded dropdown values.
+//
+// Benefits:
+// 1. New locations automatically appear
+// 2. New roles automatically appear
+// 3. New hike values automatically appear
+// 4. New ratings automatically appear
+// 5. No frontend code changes required
+//    when employee data changes
+//
+// Example:
+// If an employee is added with
+// work_location = "Delhi",
+// "Delhi" automatically appears
+// in the Location dropdown.
+//
+// APIs Used:
+// /locations
+// /roles
+// /hikes
+// /ratings
+// ==========================================
+
+async function loadFilters() {
+
+    document.getElementById("location").innerHTML =
+    '<option value="">Select Location</option>';
+
+document.getElementById("role").innerHTML =
+    '<option value="">Select Role</option>';
+
+document.getElementById("hike").innerHTML =
+    '<option value="">Select Hike</option>';
+
+document.getElementById("rating").innerHTML =
+    '<option value="">Select Rating</option>';
+
+    // Load Locations
+    let response =
+        await fetch("/locations");
+
+    let locations =
+        await response.json();
+
+    let locationSelect =
+        document.getElementById(
+            "location"
+        );
+
+    locations.forEach(loc => {
+
+        locationSelect.innerHTML +=
+        `<option value="${loc}">
+            ${loc}
+        </option>`;
+    });
+
+
+    // Load Roles
+    response =
+        await fetch("/roles");
+
+    let roles =
+        await response.json();
+
+    let roleSelect =
+        document.getElementById(
+            "role"
+        );
+
+    roles.forEach(role => {
+
+        roleSelect.innerHTML +=
+        `<option value="${role}">
+            ${role}
+        </option>`;
+    });
+
+
+    // Load Hikes
+    response =
+        await fetch("/hikes");
+
+    let hikes =
+        await response.json();
+
+    let hikeSelect =
+        document.getElementById(
+            "hike"
+        );
+
+    hikes.forEach(hike => {
+
+        hikeSelect.innerHTML +=
+        `<option value="${hike}">
+            ${hike}
+        </option>`;
+    });
+
+
+    // Load Ratings
+    response =
+        await fetch("/ratings");
+
+    let ratings =
+        await response.json();
+
+    let ratingSelect =
+        document.getElementById(
+            "rating"
+        );
+
+    ratings.forEach(rating => {
+
+        ratingSelect.innerHTML +=
+        `<option value="${rating}">
+            ${rating}
+        </option>`;
+    });
+}
+
+function createTable(data){
+
+    if(data.length===0){
+
+        document.getElementById(
+            "employeeTable"
+        ).innerHTML =
+            "<h3>No Employees Found</h3>";
+
+        return;
+    }
+
+    let html =
+        "<table>";
+
+    html += `
+    <tr>
+    <th>ID</th>
+    <th>Location</th>
+    <th>Salary</th>
+    <th>Hike</th>
+    <th>Rating</th>
+    <th>Role</th>
+    </tr>
+    `;
+
+    data.forEach(emp=>{
+
+        html += `
+        <tr>
+        <td>${emp.id}</td>
+        <td>${emp.work_location}</td>
+        <td>${emp.present_salary}</td>
+        <td>${emp.expected_hike}</td>
+        <td>${emp.performance_rating}</td>
+        <td>${emp.role}</td>
+        </tr>
+        `;
+    });
+
+    html += "</table>";
+
+    document.getElementById(
+        "employeeTable"
+    ).innerHTML = html;
+}
+
+
+function goToAssign(){
+
+    document
+    .getElementById(
+        "assignSection"
+    )
+    .scrollIntoView({
+        behavior:"smooth"
+    });
+}
+
+
+function assignEmployees(){
+
+    assignedEmployees =
+        fetchedEmployees.map(emp=>{
+
+            let project="";
+            let team="";
+
+            if(emp.performance_rating>=4.5)
+                project=
+                "Project Platinum";
+
+            else if(
+                emp.performance_rating>=4
+            )
+                project=
+                "Project Gold";
+
+            else
+                project=
+                "Project Silver";
+
+            if(
+                emp.role.toLowerCase()
+                ==="developer"
+            )
+                team=
+                "Backend Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="qa"
+            )
+                team=
+                "Testing Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="designer"
+            )
+                team=
+                "UI/UX Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="devops"
+            )
+                team=
+                "Infrastructure Team";
+
+            else if(
+                emp.role.toLowerCase()
+                ==="manager"
+            )
+                team=
+                "Management Team";
+
+            else
+                team=
+                "Support Team";
+
+            return {
+
+                ...emp,
+
+                assigned_project:
+                    project,
+
+                assigned_team:
+                    team
+            };
+        });
+
+    document.getElementById(
+        "assignResult"
+    ).innerText =
+        JSON.stringify(
+            {
+                selected_count:
+                    assignedEmployees.length,
+
+                employees:
+                    assignedEmployees
+            },
+            null,
+            2
+        );
+}
+
+
+// ==========================================
+// EXPORT ASSIGNED EMPLOYEES
+//
+// Purpose:
+// Download assigned employees with
+// project and team details.
+//
+// Why:
+// HR can save assignment results
+// into Excel.
+//
+// Output:
+// assigned_employees.csv
+// ==========================================
+
+function exportAssignedCSV(){
+
+    if(assignedEmployees.length === 0){
+
+        alert(
+            "Assign employees first"
+        );
+
+        return;
+    }
+
+    let csv = "";
+
+    const headers =
+        Object.keys(
+            assignedEmployees[0]
+        );
+
+    csv +=
+        headers.join(",") +
+        "\n";
+
+    assignedEmployees.forEach(emp => {
+
+        csv +=
+            headers.map(
+                h => emp[h]
+            ).join(",") +
+            "\n";
+    });
+
+    const blob =
+        new Blob(
+            [csv],
+            {
+                type:
+                "text/csv"
+            }
+        );
+
+    const url =
+        window.URL.createObjectURL(
+            blob
+        );
+
+    const a =
+        document.createElement(
+            "a"
+        );
+
+    a.href = url;
+
+    a.download =
+        "assigned_employees.csv";
+
+    a.click();
+
+    window.URL
+        .revokeObjectURL(
+            url
+        );
+}
+// ==========================================
+// EXPORT EMPLOYEES TO CSV
+//
+// Purpose:
+// Download employee records as CSV.
+//
+// Why:
+// Allows HR users to export filtered
+// employee data into Excel.
+//
+// Example:
+// Select Location = Chennai
+// Click Export CSV
+// Download only Chennai employees.
+// ==========================================
+
+function exportCSV(){
+
+    let params =  
+        new URLSearchParams(); 
+
+    const location =
+        document.getElementById(
+            "location"
+        ).value;
+
+    const role =
+        document.getElementById(
+            "role"
+        ).value;
+
+    if(location){
+
+        params.append(
+            "work_location",
+            location
+        );
+    }
+
+    if(role){
+
+        params.append(
+            "role",
+            role
+        );
+    }
+
+    window.location.href =
+        "/export-csv?" +
+        params.toString();
+}
+
+// ==========================================
+// PAGE INITIALIZATION
+//
+// Purpose:
+// Automatically populate filter dropdowns
+// when the page loads.
+//
+// This ensures latest values from MongoDB
+// are always shown to the user.
+// ==========================================
+
+window.onload = function(){
+
+    loadFilters();
+}
+
+</script>
+
+</body>
+</html>
